@@ -1,0 +1,16 @@
+data base
+-create table users
+-create table  type_transcation
+-create table prefixe
+-create table frais
+-create table transcation
+-create table compte_operateur
+dans app/config/database.php fonction pour se connecter a la base de donnee
+
+dans app/model
+  -class usersmodel
+  -class fraismodel
+  -class type_transactionmodel 
+  -class type_transactionmodel
+  -class prefix
+  -class compte_operateur
