@@ -231,3 +231,18 @@ INSERT OR IGNORE INTO clients (phone_number, balance) VALUES
 ('0340000001', 50000.00),
 ('0320000002', 150000.00),
 ('0330000003', 0.00);
+
+CREATE TABLE promotion(
+    id_promotion INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom VARCHAR(50),
+    operator_id INTEGER NOT NULL,
+    min_amount DECIMAL(15, 2),
+    max_amount DECIMAL(15, 2),
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+    FOREIGN KEY (operation_type_id) REFERENCES operation_types(id) ON DELETE CASCADE,
+    CHECK (commission_percentage >= 0),
+    CHECK (min_amount IS NULL OR max_amount IS NULL OR min_amount <= max_amount)
+);
+
