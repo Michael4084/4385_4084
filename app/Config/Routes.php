@@ -56,6 +56,10 @@ $routes->group('operator', ['namespace' => 'App\Controllers\Operator', 'filter' 
     $routes->get('fees', 'FeeBracketController::index');
     $routes->post('fees', 'FeeBracketController::store');
     $routes->post('fees/delete/(:num)', 'FeeBracketController::delete/$1');
+
+    // Commissions
+    $routes->get('commissions', 'CommissionController::index');
+    $routes->post('commissions', 'CommissionController::store');
     
     // Clients
     $routes->get('clients', 'ClientController::index');

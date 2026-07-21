@@ -73,20 +73,29 @@ class TransactionController extends Controller
     public function processTransfer()
     {
         $amount = (float) $this->request->getPost('amount');
-        $receiverPhone = $this->request->getPost('receiver_phone_number');
+        $receiverInput = $this->request->getPost('receiver_phone_numbers') ?: $this->request->getPost('receiver_phone_number');
+        $includeWithdrawalFee = (bool) $this->request->getPost('include_withdrawal_fee');
 
         if ($amount <= 0) {
             return redirect()->back()->with('error', 'Le montant doit être supérieur à zéro.');
         }
-        if (!$receiverPhone) {
+        if (!$receiverInput) {
             return redirect()->back()->with('error', 'Le numéro du destinataire est obligatoire.');
         }
 
+        $receivers = preg_split('/[\r\n,;]+/', (string) $receiverInput);
+        $receivers = array_values(array_filter(array_map('trim', $receivers)));
+        if ($receivers === []) {
+            return redirect()->back()->with('error', 'Aucun destinataire valide n’a été fourni.');
+        }
+
         $clientId = session()->get('client_id');
-        $result = $this->transactionService->transfer($clientId, $receiverPhone, $amount);
+        $result = $this->transactionService->transfer($clientId, $receivers, $amount, $includeWithdrawalFee);
 
         if ($result['success']) {
-            return redirect()->to('/client/dashboard')->with('success', "Transfert de {$amount} Ar vers {$receiverPhone} réussi. Frais : {$result['fee']} Ar. Coût total : {$result['total']} Ar. Nouveau solde : {$result['balance_after']} Ar. Réf: {$result['reference']}");
+            $destinationLabel = count($receivers) > 1 ? 'plusieurs destinataires' : $receivers[0];
+            $extraMessage = $includeWithdrawalFee ? ' avec frais de retrait inclus' : '';
+            return redirect()->to('/client/dashboard')->with('success', "Transfert de {$amount} Ar vers {$destinationLabel} réussi{$extraMessage}. Frais : {$result['fee']} Ar. Coût total : {$result['total']} Ar. Nouveau solde : {$result['balance_after']} Ar. Réf: {$result['reference']}");
         } else {
             return redirect()->back()->withInput()->with('error', $result['message']);
         }

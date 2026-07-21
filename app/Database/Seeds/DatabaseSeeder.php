@@ -14,12 +14,17 @@ class DatabaseSeeder extends Seeder
             $this->db->table('operators')->insert([
                 'username'      => 'admin',
                 'password_hash' => password_hash('admin123', PASSWORD_BCRYPT),
+                'operator_code' => 'TELMA',
                 'created_at'    => date('Y-m-d H:i:s'),
             ]);
+        } else {
+            $this->db->table('operators')->where('id', $existingAdmin->id)->update(['operator_code' => 'TELMA']);
         }
 
+        $telmaOperator = $this->db->table('operators')->where('username', 'admin')->get()->getRow();
+
         // 2. Phone Prefixes — insérer seulement les préfixes manquants
-        $prefixes = ['032', '033', '034', '037', '038'];
+        $prefixes = ['031', '032', '033', '034', '037', '038', '039'];
         foreach ($prefixes as $prefix) {
             $exists = $this->db->table('phone_prefixes')->where('prefix', $prefix)->get()->getRow();
             if (!$exists) {
@@ -32,7 +37,22 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // 3. Operation Types — insérer seulement les types manquants
+        // 3. Operator prefixes — Telma gère 034/038 par défaut
+        $telmaPrefixes = ['034', '038'];
+        foreach ($telmaPrefixes as $prefix) {
+            $exists = $this->db->table('operator_prefixes')->where('operator_id', $telmaOperator->id)->where('prefix', $prefix)->get()->getRow();
+            if (!$exists) {
+                $this->db->table('operator_prefixes')->insert([
+                    'operator_id' => $telmaOperator->id,
+                    'prefix'      => $prefix,
+                    'is_active'   => 1,
+                    'created_at'  => date('Y-m-d H:i:s'),
+                    'updated_at'  => date('Y-m-d H:i:s'),
+                ]);
+            }
+        }
+
+        // 4. Operation Types — insérer seulement les types manquants
         $operationTypes = [
             ['code' => 'DEPOSIT',    'name' => 'Dépôt'],
             ['code' => 'WITHDRAWAL', 'name' => 'Retrait'],
@@ -56,7 +76,18 @@ class DatabaseSeeder extends Seeder
         $withdrawalId = $this->db->table('operation_types')->where('code', 'WITHDRAWAL')->get()->getRow()->id;
         $transferId   = $this->db->table('operation_types')->where('code', 'TRANSFER')->get()->getRow()->id;
 
-        // 4. Fee Brackets — insérer seulement si la table est vide
+        // 5. Commission rules — Orange/Airtel commissions via Telma
+        $commissionRules = [
+            ['operator_id' => $telmaOperator->id, 'operation_type_id' => $transferId, 'commission_percentage' => 1.00, 'min_amount' => 1000, 'max_amount' => 999999999, 'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s')],
+        ];
+        foreach ($commissionRules as $rule) {
+            $exists = $this->db->table('operator_commissions')->where('operator_id', $rule['operator_id'])->where('operation_type_id', $rule['operation_type_id'])->get()->getRow();
+            if (!$exists) {
+                $this->db->table('operator_commissions')->insert($rule);
+            }
+        }
+
+        // 6. Fee Brackets — insérer seulement si la table est vide
         $existingFees = $this->db->table('fee_brackets')->countAllResults();
         if ($existingFees === 0) {
             $feeBrackets = [
@@ -91,7 +122,7 @@ class DatabaseSeeder extends Seeder
             $this->db->table('fee_brackets')->insertBatch($feeBrackets);
         }
 
-        // 5. Clients — insérer seulement les clients manquants
+        // 7. Clients — insérer seulement les clients manquants
         $clients = [
             ['phone_number' => '0340000001', 'balance' => 50000.00, 'status' => 'active'],
             ['phone_number' => '0320000002', 'balance' => 150000.00, 'status' => 'active'],

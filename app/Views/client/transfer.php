@@ -41,6 +41,17 @@
                     <div class="form-text"><i class="bi bi-info-circle me-1"></i> Format : 10 chiffres (ex: 0340000002)</div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Destinataires (un par ligne, ou séparés par une virgule)</label>
+                    <textarea name="receiver_phone_numbers" class="form-control" rows="4" placeholder="0340000001&#10;0320000002" required><?= old('receiver_phone_numbers') ?></textarea>
+                    <div class="form-text"><i class="bi bi-info-circle me-1"></i> Vous pouvez envoyer à plusieurs numéros. Le montant sera divisé équitablement.</div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input class="form-check-input" type="checkbox" name="include_withdrawal_fee" id="include_withdrawal_fee" value="1">
+                    <label class="form-check-label" for="include_withdrawal_fee">Inclure les frais de retrait</label>
+                </div>
+
                 <div class="mb-4">
                     <label class="form-label fw-semibold">Montant à transférer</label>
                     <div class="input-group input-group-lg border rounded-3 overflow-hidden">

@@ -12,12 +12,6 @@
 </head>
 <body>
 
-<!-- Bouton thème -->
-<button class="theme-toggle-operator" onclick="toggleTheme()">
-    <i class="bi bi-moon" id="theme-icon"></i>
-    <span id="theme-text" class="ms-1">Sombre</span>
-</button>
-
 <!-- Header -->
 <header class="header-operator">
     <div class="d-flex align-items-center gap-3">
@@ -30,7 +24,15 @@
             <span class="d-inline d-sm-none">Opérateur</span>
         </a>
     </div>
-    <div>
+    <div class="header-actions">
+        <a class="nav-link-operator" href="<?= site_url('operator/dashboard') ?>">
+            <i class="bi bi-speedometer2 me-1"></i>
+            <span class="d-none d-sm-inline">Dashboard</span>
+        </a>
+        <a class="nav-link-operator" href="<?= site_url('operator/commissions') ?>">
+            <i class="bi bi-percent me-1"></i>
+            <span class="d-none d-sm-inline">Commissions</span>
+        </a>
         <a class="nav-link-operator" href="<?= site_url('operator/logout') ?>">
             <i class="bi bi-box-arrow-right me-1"></i>
             <span class="d-none d-sm-inline">Déconnexion</span>
@@ -102,38 +104,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        const icon = document.getElementById('theme-icon');
-        const text = document.getElementById('theme-text');
-        
-        if (document.body.classList.contains('dark-mode')) {
-            icon.classList.remove('bi-moon');
-            icon.classList.add('bi-sun');
-            text.textContent = 'Clair';
-            localStorage.setItem('theme', 'dark');
-        } else {
-            icon.classList.remove('bi-sun');
-            icon.classList.add('bi-moon');
-            text.textContent = 'Sombre';
-            localStorage.setItem('theme', 'light');
-        }
-    }
-
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebarMenu');
         const overlay = document.getElementById('sidebarOverlay');
         sidebar.classList.toggle('open');
         overlay.classList.toggle('show');
-    }
-
-    // Charger le thème sauvegardé
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('theme-icon').classList.remove('bi-moon');
-        document.getElementById('theme-icon').classList.add('bi-sun');
-        document.getElementById('theme-text').textContent = 'Clair';
     }
 </script>
 </body>

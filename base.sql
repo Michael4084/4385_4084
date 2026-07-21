@@ -141,68 +141,93 @@ CREATE INDEX IF NOT EXISTS idx_transaction_recipients_transaction ON transaction
 
 -- Opérateur de démo (admin / admin123)
 -- Le hash de "admin123" généré par password_hash('admin123', PASSWORD_BCRYPT)
-INSERT INTO operators (username, password_hash, operator_code) VALUES 
-('admin', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'OP_ADMIN');
+INSERT OR IGNORE INTO operators (id, username, password_hash, operator_code) VALUES 
+(1, 'admin', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'OP_ADMIN');
 
 -- Préfixes téléphoniques par défaut
-INSERT INTO phone_prefixes (prefix, is_active) VALUES 
+INSERT OR IGNORE INTO phone_prefixes (prefix, is_active) VALUES 
+('031', 1),
 ('032', 1),
 ('033', 1),
 ('034', 1),
 ('037', 1),
-('038', 1);
+('038', 1),
+('039', 1);
 
 -- v2: Configuration des préfixes pour l'opérateur admin
-INSERT INTO operator_prefixes (operator_id, prefix, is_active) VALUES 
+INSERT OR IGNORE INTO operator_prefixes (operator_id, prefix, is_active) VALUES 
+(1, '031', 1),
 (1, '032', 1),
 (1, '033', 1),
 (1, '034', 1),
 (1, '037', 1),
-(1, '038', 1);
+(1, '038', 1),
+(1, '039', 1);
 
 -- Types d'opérations
-INSERT INTO operation_types (id, code, name, is_active) VALUES 
+INSERT OR IGNORE INTO operation_types (id, code, name, is_active) VALUES 
 (1, 'DEPOSIT', 'Dépôt', 1),
 (2, 'WITHDRAWAL', 'Retrait', 1),
 (3, 'TRANSFER', 'Transfert', 1);
 
 -- v2: Commissions inter-opérateurs pour l'opérateur admin (2% sur les transferts vers autres opérateurs)
-INSERT INTO operator_commissions (operator_id, operation_type_id, commission_percentage) VALUES 
-(1, 3, 2.00); -- 2% de commission sur les transferts
+INSERT INTO operator_commissions (operator_id, operation_type_id, commission_percentage)
+SELECT 1, 3, 2.00
+WHERE NOT EXISTS (SELECT 1 FROM operator_commissions WHERE operator_id = 1 AND operation_type_id = 3);
 
 -- Barèmes de frais pour le Dépôt (souvent 0 ou fixe dans la réalité, ici un exemple)
-INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount) VALUES 
-(1, 0, 999999999, 0); -- Les dépôts sont gratuits
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 1, 0, 999999999, 0
+WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 1 AND min_amount = 0 AND max_amount = 999999999);
 
 -- Barèmes de frais pour le Retrait (exemple)
-INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount) VALUES 
-(2, 100, 1000, 50),
-(2, 1001, 5000, 100),
-(2, 5001, 10000, 200),
-(2, 10001, 25000, 500),
-(2, 25001, 50000, 1000),
-(2, 50001, 100000, 2000),
-(2, 100001, 250000, 4000),
-(2, 250001, 500000, 8000),
-(2, 500001, 1000000, 12000),
-(2, 1000001, 999999999, 15000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 100, 1000, 50 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 100 AND max_amount = 1000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 1001, 5000, 100 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 1001 AND max_amount = 5000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 5001, 10000, 200 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 5001 AND max_amount = 10000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 10001, 25000, 500 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 10001 AND max_amount = 25000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 25001, 50000, 1000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 25001 AND max_amount = 50000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 50001, 100000, 2000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 50001 AND max_amount = 100000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 100001, 250000, 4000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 100001 AND max_amount = 250000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 250001, 500000, 8000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 250001 AND max_amount = 500000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 500001, 1000000, 12000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 500001 AND max_amount = 1000000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 2, 1000001, 999999999, 15000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 2 AND min_amount = 1000001 AND max_amount = 999999999);
 
 -- Barèmes de frais pour le Transfert (exemple de l'énoncé)
-INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount) VALUES 
-(3, 100, 1000, 50),
-(3, 1001, 5000, 50),
-(3, 5001, 10000, 100),
-(3, 10001, 25000, 200),
-(3, 25001, 50000, 400),
-(3, 50001, 100000, 800),
-(3, 100001, 250000, 1500),
-(3, 250001, 500000, 1500),
-(3, 500001, 1000000, 2500),
-(3, 1000001, 2000000, 3000),
-(3, 2000001, 999999999, 5000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 100, 1000, 50 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 100 AND max_amount = 1000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 1001, 5000, 50 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 1001 AND max_amount = 5000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 5001, 10000, 100 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 5001 AND max_amount = 10000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 10001, 25000, 200 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 10001 AND max_amount = 25000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 25001, 50000, 400 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 25001 AND max_amount = 50000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 50001, 100000, 800 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 50001 AND max_amount = 100000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 100001, 250000, 1500 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 100001 AND max_amount = 250000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 250001, 500000, 1500 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 250001 AND max_amount = 500000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 500001, 1000000, 2500 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 500001 AND max_amount = 1000000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 1000001, 2000000, 3000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 1000001 AND max_amount = 2000000);
+INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount)
+SELECT 3, 2000001, 999999999, 5000 WHERE NOT EXISTS (SELECT 1 FROM fee_brackets WHERE operation_type_id = 3 AND min_amount = 2000001 AND max_amount = 999999999);
 
 -- Clients de démo
-INSERT INTO clients (phone_number, balance) VALUES 
+INSERT OR IGNORE INTO clients (phone_number, balance) VALUES 
 ('0340000001', 50000.00),
 ('0320000002', 150000.00),
 ('0330000003', 0.00);

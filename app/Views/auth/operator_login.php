@@ -11,11 +11,6 @@
 </head>
 <body>
 
-<button class="theme-toggle" onclick="toggleTheme()">
-    <i class="bi bi-moon" id="theme-icon"></i>
-    <span id="theme-text">Sombre</span>
-</button>
-
 <div class="login-wrapper">
     <div class="login-card">
         <!-- En-tête avec icône -->
@@ -74,33 +69,5 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        const icon = document.getElementById('theme-icon');
-        const text = document.getElementById('theme-text');
-        
-        if (document.body.classList.contains('dark-mode')) {
-            icon.classList.remove('bi-moon');
-            icon.classList.add('bi-sun');
-            text.textContent = 'Clair';
-            localStorage.setItem('theme', 'dark');
-        } else {
-            icon.classList.remove('bi-sun');
-            icon.classList.add('bi-moon');
-            text.textContent = 'Sombre';
-            localStorage.setItem('theme', 'light');
-        }
-    }
-
-    // Charger le thème sauvegardé
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('theme-icon').classList.remove('bi-moon');
-        document.getElementById('theme-icon').classList.add('bi-sun');
-        document.getElementById('theme-text').textContent = 'Clair';
-    }
-</script>
 </body>
 </html>

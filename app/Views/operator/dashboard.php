@@ -43,16 +43,16 @@
     <div class="col-md-3">
         <div class="card h-100" style="background-color: #0C4650; color: white; border: 2px solid black;">
             <div class="card-body">
-                <h6 class="card-title">Revenus Transferts</h6>
-                <h3 class="card-text fw-bold text-white"><?= number_format($stats['fee_transfers'] ?? 0, 2, ',', ' ') ?> Ar</h3>
+                <h6 class="card-title">Revenus Opérateur</h6>
+                <h3 class="card-text fw-bold text-white"><?= number_format($ownOperatorFees ?? 0, 2, ',', ' ') ?> Ar</h3>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card h-100" style="background-color: #0C4650; color: white; border: 2px solid black;">
             <div class="card-body">
-                <h6 class="card-title">Revenus Retraits</h6>
-                <h3 class="card-text fw-bold text-white"><?= number_format($stats['fee_withdrawals'] ?? 0, 2, ',', ' ') ?> Ar</h3>
+                <h6 class="card-title">Autres opérateurs</h6>
+                <h3 class="card-text fw-bold text-white"><?= number_format($otherOperatorFees ?? 0, 2, ',', ' ') ?> Ar</h3>
             </div>
         </div>
     </div>
@@ -63,6 +63,23 @@
                 <h3 class="card-text fw-bold" style="color: #E6FF2A;"><?= number_format($stats['total_volume'] ?? 0, 2, ',', ' ') ?> Ar</h3>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="mb-3">Montants à envoyer par opérateur</h5>
+        <ul class="list-group">
+            <?php foreach($operatorBreakdown as $prefix => $amount): ?>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Préfixe <?= htmlspecialchars($prefix) ?></span>
+                    <strong><?= number_format($amount, 2, ',', ' ') ?> Ar</strong>
+                </li>
+            <?php endforeach; ?>
+            <?php if(empty($operatorBreakdown)): ?>
+                <li class="list-group-item text-muted">Aucune commission inter-opérateur enregistrée.</li>
+            <?php endif; ?>
+        </ul>
     </div>
 </div>
 
