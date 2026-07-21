@@ -4,15 +4,15 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class OperatorModel extends Model
+class TransactionRecipientModel extends Model
 {
-    protected $table            = 'operators';
+    protected $table            = 'transaction_recipients';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['username', 'password_hash', 'operator_code'];
+    protected $allowedFields    = ['transaction_id', 'receiver_phone_number', 'amount'];
 
     protected bool $allowEmptyInserts = false;
 
@@ -20,7 +20,6 @@ class OperatorModel extends Model
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
-    protected $updatedField  = ''; // No updated_at in table
+    protected $updatedField  = '';
     protected $deletedField  = '';
 }
-

@@ -14,8 +14,9 @@ class TransactionModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = [
         'transaction_reference', 'operation_type_id', 'sender_client_id', 
-        'receiver_client_id', 'amount', 'fee_amount', 'total_amount', 
-        'balance_before', 'balance_after', 'status'
+        'receiver_client_id', 'sender_operator_id', 'receiver_operator_id',
+        'amount', 'fee_amount', 'inter_operator_commission', 'total_amount', 
+        'balance_before', 'balance_after', 'include_withdrawal_fee', 'status'
     ];
 
     protected bool $allowEmptyInserts = false;

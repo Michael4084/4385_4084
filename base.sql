@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS operators (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    operator_code VARCHAR(50) UNIQUE, -- Code unique pour l'opérateur (v2)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -20,6 +21,18 @@ CREATE TABLE IF NOT EXISTS phone_prefixes (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 2b. Table des préfixes par opérateur (v2) - Chaque opérateur peut gérer plusieurs préfixes
+CREATE TABLE IF NOT EXISTS operator_prefixes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    operator_id INTEGER NOT NULL,
+    prefix VARCHAR(10) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+    UNIQUE (operator_id, prefix)
+);
+
 -- 3. Table des types d'opérations
 CREATE TABLE IF NOT EXISTS operation_types (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +41,22 @@ CREATE TABLE IF NOT EXISTS operation_types (
     is_active BOOLEAN NOT NULL DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3b. Table des commissions inter-opérateurs (v2) - Commission % pour les transferts vers d'autres opérateurs
+CREATE TABLE IF NOT EXISTS operator_commissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    operator_id INTEGER NOT NULL,
+    operation_type_id INTEGER NOT NULL,
+    commission_percentage DECIMAL(5, 2) NOT NULL DEFAULT 0.00, -- Pourcentage de commission
+    min_amount DECIMAL(15, 2),
+    max_amount DECIMAL(15, 2),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+    FOREIGN KEY (operation_type_id) REFERENCES operation_types(id) ON DELETE CASCADE,
+    CHECK (commission_percentage >= 0),
+    CHECK (min_amount IS NULL OR max_amount IS NULL OR min_amount <= max_amount)
 );
 
 -- 4. Table des tranches de frais
@@ -62,18 +91,25 @@ CREATE TABLE IF NOT EXISTS transactions (
     operation_type_id INTEGER NOT NULL,
     sender_client_id INTEGER,
     receiver_client_id INTEGER,
+    sender_operator_id INTEGER, -- v2: Opérateur source
+    receiver_operator_id INTEGER, -- v2: Opérateur destinataire
     amount DECIMAL(15, 2) NOT NULL,
     fee_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    inter_operator_commission DECIMAL(15, 2) NOT NULL DEFAULT 0.00, -- v2: Commission inter-opérateurs
     total_amount DECIMAL(15, 2) NOT NULL,
     balance_before DECIMAL(15, 2) NOT NULL,
     balance_after DECIMAL(15, 2) NOT NULL,
+    include_withdrawal_fee BOOLEAN DEFAULT 0, -- v2: Si les frais de retrait sont inclus
     status VARCHAR(20) NOT NULL DEFAULT 'completed', -- 'pending', 'completed', 'failed', 'cancelled'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (operation_type_id) REFERENCES operation_types(id) ON DELETE RESTRICT,
     FOREIGN KEY (sender_client_id) REFERENCES clients(id) ON DELETE SET NULL,
     FOREIGN KEY (receiver_client_id) REFERENCES clients(id) ON DELETE SET NULL,
+    FOREIGN KEY (sender_operator_id) REFERENCES operators(id) ON DELETE SET NULL,
+    FOREIGN KEY (receiver_operator_id) REFERENCES operators(id) ON DELETE SET NULL,
     CHECK (amount > 0),
-    CHECK (fee_amount >= 0)
+    CHECK (fee_amount >= 0),
+    CHECK (inter_operator_commission >= 0)
 );
 
 -- Index pour optimiser les recherches
@@ -85,14 +121,28 @@ CREATE INDEX IF NOT EXISTS idx_transactions_sender ON transactions(sender_client
 CREATE INDEX IF NOT EXISTS idx_transactions_receiver ON transactions(receiver_client_id);
 CREATE INDEX IF NOT EXISTS idx_fee_brackets_operation ON fee_brackets(operation_type_id);
 
+-- 7. Table des destinataires multiples de transactions (v2) - Pour les envois vers plusieurs numéros
+CREATE TABLE IF NOT EXISTS transaction_recipients (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER NOT NULL,
+    receiver_phone_number VARCHAR(20) NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+    CHECK (amount > 0)
+);
+
+-- Index pour transaction_recipients
+CREATE INDEX IF NOT EXISTS idx_transaction_recipients_transaction ON transaction_recipients(transaction_id);
+
 -- ==========================================
 -- INSERTION DES DONNÉES INITIALES
 -- ==========================================
 
 -- Opérateur de démo (admin / admin123)
 -- Le hash de "admin123" généré par password_hash('admin123', PASSWORD_BCRYPT)
-INSERT INTO operators (username, password_hash) VALUES 
-('admin', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm');
+INSERT INTO operators (username, password_hash, operator_code) VALUES 
+('admin', '$2y$10$TKh8H1.PfQx37YgCzwiKb.KjNyWgaHb9cbcoQgdIVFlYg7B77UdFm', 'OP_ADMIN');
 
 -- Préfixes téléphoniques par défaut
 INSERT INTO phone_prefixes (prefix, is_active) VALUES 
@@ -102,11 +152,23 @@ INSERT INTO phone_prefixes (prefix, is_active) VALUES
 ('037', 1),
 ('038', 1);
 
+-- v2: Configuration des préfixes pour l'opérateur admin
+INSERT INTO operator_prefixes (operator_id, prefix, is_active) VALUES 
+(1, '032', 1),
+(1, '033', 1),
+(1, '034', 1),
+(1, '037', 1),
+(1, '038', 1);
+
 -- Types d'opérations
 INSERT INTO operation_types (id, code, name, is_active) VALUES 
 (1, 'DEPOSIT', 'Dépôt', 1),
 (2, 'WITHDRAWAL', 'Retrait', 1),
 (3, 'TRANSFER', 'Transfert', 1);
+
+-- v2: Commissions inter-opérateurs pour l'opérateur admin (2% sur les transferts vers autres opérateurs)
+INSERT INTO operator_commissions (operator_id, operation_type_id, commission_percentage) VALUES 
+(1, 3, 2.00); -- 2% de commission sur les transferts
 
 -- Barèmes de frais pour le Dépôt (souvent 0 ou fixe dans la réalité, ici un exemple)
 INSERT INTO fee_brackets (operation_type_id, min_amount, max_amount, fee_amount) VALUES 

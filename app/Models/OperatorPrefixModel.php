@@ -4,15 +4,15 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class OperatorModel extends Model
+class OperatorPrefixModel extends Model
 {
-    protected $table            = 'operators';
+    protected $table            = 'operator_prefixes';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['username', 'password_hash', 'operator_code'];
+    protected $allowedFields    = ['operator_id', 'prefix', 'is_active'];
 
     protected bool $allowEmptyInserts = false;
 
@@ -20,7 +20,6 @@ class OperatorModel extends Model
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
-    protected $updatedField  = ''; // No updated_at in table
+    protected $updatedField  = 'updated_at';
     protected $deletedField  = '';
 }
-
