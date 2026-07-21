@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Controllers;
+
+use App\Models\ClientModel;
+use App\Services\TransactionService;
+use CodeIgniter\Controller;
+
+class epargne_controller extends controller
+{
+public function transferavecepargne()
+    {
+        $clientModel = new ClientModel();
+        $client = $clientModel->find(session()->get('client_id'));
+        return view('client/transferavecepargne', ['client' => $client]);
+
+        $clientModel = new ClientModel();
+        $client = $clientModel->find(session()->get('client_id'));
+        return view('client/transfer', ['client' => $client]);
+    }
+
+    public function processTransfer()
+    {
+        $amount = (float) $this->request->getPost('amount');
+        $receiverInput = $this->request->getPost('receiver_phone_numbers') ?: $this->request->getPost('receiver_phone_number');
+        $includeWithdrawalFee = (bool) $this->request->getPost('include_withdrawal_fee');
+
+        if ($amount <= 0) {
+            return redirect()->back()->with('error', 'Le montant doit être supérieur à zéro.');
+        }
+        if (!$receiverInput) {
+            return redirect()->back()->with('error', 'Le numéro du destinataire est obligatoire.');
+        }
+
+        $receivers = preg_split('/[\r\n,;]+/', (string) $receiverInput);
+        $receivers = array_values(array_filter(array_map('trim', $receivers)));
+        if ($receivers === []) {
+            return redirect()->back()->with('error', 'Aucun destinataire valide n’a été fourni.');
+        }
+
+        $clientId = session()->get('client_id');
+        $result = $this->transactionService->transfer($clientId, $receivers, $amount, $includeWithdrawalFee);
+
+        if ($result['success']) {
+            $destinationLabel = count($receivers) > 1 ? 'plusieurs destinataires' : $receivers[0];
+            $extraMessage = $includeWithdrawalFee ? ' avec frais de retrait inclus' : '';
+            return redirect()->to('/client/dashboard')->with('success', "Transfert de {$amount} Ar vers {$destinationLabel} réussi{$extraMessage}. Frais : {$result['fee']} Ar. Coût total : {$result['total']} Ar. Nouveau solde : {$result['balance_after']} Ar. Réf: {$result['reference']}");
+        } else {
+            return redirect()->back()->withInput()->with('error', $result['message']);
+        }
+    }
+}

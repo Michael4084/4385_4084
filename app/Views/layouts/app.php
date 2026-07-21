@@ -15,9 +15,8 @@
 <header class="top-nav">
     <div class="app-wrapper top-nav-inner">
         <a class="brand" href="<?= site_url('client/dashboard') ?>">
-            <img src="/assets/utils/Gemini_Generated_Image_om0k4som0k4som0k.png" alt="Mobile Money Logo">
             <div>
-                <strong>Telma Mobile Money</strong>
+                <strong> Mobile Money</strong>
                 <span>Transferts rapides et sécurisés</span>
             </div>
         </a>
